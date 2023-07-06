@@ -181,5 +181,5 @@ FROM Sales.Orders AS so
 	ON so.OrderID = sol.OrderID
 	JOIN Sales.Customers AS c
 	ON so.CustomerID = c.CustomerID
-WHERE sol.StockItemID = 224
+WHERE sol.Description LIKE 'Chocolate frogs 250g'
 ORDER BY c.CustomerName
