@@ -30,10 +30,22 @@ USE WideWorldImporters
 Продажи смотреть в таблице Sales.Invoices и связанных таблицах.
 */
 
-напишите здесь свое решение
+SELECT 
+	year(si.InvoiceDate) AS SaleYear,
+	month(si.InvoiceDate) AS SaleMonth,
+	AVG(sil.UnitPrice) AS AvgPrice,
+	SUM(sil.ExtendedPrice) AS TotalPrice
+
+
+FROM Sales.Invoices AS si
+	JOIN Sales.InvoiceLines AS sil
+	ON si.InvoiceID = sil.InvoiceID
+GROUP BY year(si.InvoiceDate), month(si.InvoiceDate) 
+ORDER BY SaleYear, SaleMonth
+
 
 /*
-2. Отобразить все месяцы, где общая сумма продаж превысила 4 600 000
+2. Отобразить все месяцы, где общая сумма продаж превысила  4 600 000.
 
 Вывести:
 * Год продажи (например, 2015)
@@ -43,7 +55,18 @@ USE WideWorldImporters
 Продажи смотреть в таблице Sales.Invoices и связанных таблицах.
 */
 
-напишите здесь свое решение
+SELECT 
+	year(si.InvoiceDate) AS SaleYear,
+	month(si.InvoiceDate) AS SaleMonth,
+	SUM(sil.ExtendedPrice) AS TotalPrice
+
+
+FROM Sales.Invoices AS si
+	JOIN Sales.InvoiceLines AS sil
+	ON si.InvoiceID = sil.InvoiceID
+GROUP BY year(si.InvoiceDate), month(si.InvoiceDate)
+HAVING SUM(sil.ExtendedPrice) > 4600000
+ORDER BY SaleYear, SaleMonth
 
 /*
 3. Вывести сумму продаж, дату первой продажи
@@ -62,7 +85,23 @@ USE WideWorldImporters
 Продажи смотреть в таблице Sales.Invoices и связанных таблицах.
 */
 
-напишите здесь свое решение
+SELECT 
+	year(si.InvoiceDate) AS SaleYear,
+	month(si.InvoiceDate) AS SaleMonth,
+	MIN(sil.[Description]) AS ItemName,
+	SUM(sil.ExtendedPrice) AS TotalPrice,
+	MIN(si.InvoiceDate) AS FirstSale,
+	SUM(sil.Quantity) AS Quantity
+	
+
+
+
+FROM Sales.Invoices AS si
+	JOIN Sales.InvoiceLines AS sil
+	ON si.InvoiceID = sil.InvoiceID
+GROUP BY year(si.InvoiceDate), month(si.InvoiceDate), sil.[Description]
+HAVING SUM(sil.Quantity) < 50
+ORDER BY SaleYear, SaleMonth
 
 -- ---------------------------------------------------------------------------
 -- Опционально
