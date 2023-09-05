@@ -136,19 +136,24 @@ AS UNPVT
 В результатах должно быть ид клиета, его название, ид товара, цена, дата покупки.
 */
 
-SELECT
-	c.CustomerID,
-	c.CustomerName,
-	i.StockItemID,
-	i.UnitPrice,
-	i.InvoiceDate
-FROM Sales.Customers AS c 
-CROSS APPLY (SELECT TOP 2 
-				il.StockItemID,
-				il.UnitPrice,
-				inv.InvoiceDate
-             FROM  Sales.Invoices  AS inv
-				JOIN Sales.InvoiceLines AS il
-				ON  il.InvoiceID = inv.InvoiceID
-			 WHERE inv.CustomerID = c.CustomerID 
-			 ORDER BY il.UnitPrice DESC) AS i;
+SELECT 
+	CustomerID,
+	CustomerName,
+	StockItemID,
+	UnitPrice,
+	InvoiceDate
+FROM Sales.Customers
+OUTER APPLY (
+	SELECT
+		StockItemID,
+		UnitPrice,
+		Invoices.InvoiceDate,
+		ROW_NUMBER() OVER(ORDER BY UnitPrice DESC) AS rn,
+		RANK() OVER(ORDER BY UnitPrice DESC) AS rnk,
+		DENSE_RANK() OVER(ORDER BY UnitPrice DESC) AS drnk
+	FROM Sales.Invoices
+		JOIN Sales.InvoiceLines 
+		ON InvoiceLines.InvoiceID = Invoices.InvoiceID
+	WHERE Invoices.CustomerID = Customers.CustomerID) MostExpensive
+WHERE (drnk <= 2) AND (rn = rnk)
+ORDER BY CustomerName
