@@ -191,8 +191,8 @@ SELECT
 	CustomerName,
 	StockItemID,
 	UnitPrice,
-	InvoiceDate,
-	CustInvoiceRank
+	InvoiceDate
+
 FROM 
 	(
 		SELECT 
@@ -201,14 +201,17 @@ FROM
 			il.StockItemID,
 			il.UnitPrice,
 			i.InvoiceDate,
-			ROW_NUMBER() OVER (PARTITION BY c.CustomerID ORDER BY il.UnitPrice DESC ) AS CustInvoiceRank
+			ROW_NUMBER() OVER (PARTITION BY c.CustomerID ORDER BY il.UnitPrice DESC ) AS CustInvoiceRank,
+			RANK() OVER(PARTITION BY c.CustomerID ORDER BY il.UnitPrice DESC) AS rnk,
+			DENSE_RANK() OVER(PARTITION BY c.CustomerID ORDER BY il.UnitPrice DESC) AS drnk
 		FROM Sales.Customers AS c
 			JOIN Sales.Invoices AS i 
 			ON i.CustomerID = c.CustomerID
 			JOIN Sales.InvoiceLines AS il 
 			ON il.InvoiceID = i.InvoiceID
 	) AS CustomerInvoices
-WHERE CustInvoiceRank <=2
+WHERE (drnk <= 2) AND (CustInvoiceRank = rnk)
 ORDER BY CustomerID
+
 
 Опционально можете для каждого запроса без оконных функций сделать вариант запросов с оконными функциями и сравнить их производительность. 
