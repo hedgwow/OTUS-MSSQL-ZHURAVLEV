@@ -47,7 +47,18 @@ USE WideWorldImporters
 2. Выгрузить данные из таблицы StockItems в такой же xml-файл, как StockItems.xml
 */
 
-напишите здесь свое решение
+SELECT Item.StockItemName AS [@Name],
+		Item.SupplierID AS [SupplierID],
+		Item.[UnitPackageID] AS [Package/UnitPackageID],
+		Item.[OuterPackageID] AS [Package/OuterPackageID],
+		Item.[QuantityPerOuter] AS [Package/QuantityPerOuter],
+		Item.[TypicalWeightPerUnit] AS [Package/TypicalWeightPerUnit],
+		Item.[LeadTimeDays] AS [LeadTimeDays],
+		Item.[IsChillerStock] AS [IsChillerStock],
+		Item.[TaxRate] AS [TaxRate],
+		Item.[UnitPrice] AS [UnitPrice]
+FROM Warehouse.StockItems AS Item
+FOR  XML PATH('Item'), ROOT('StockItems')
 
 
 /*
@@ -59,7 +70,19 @@ USE WideWorldImporters
 - FirstTag (из поля CustomFields, первое значение из массива Tags)
 */
 
-напишите здесь свое решение
+SELECT	 
+	Item.StockItemID,
+	Item.StockItemName,
+	J.*
+FROM Warehouse.StockItems AS Item
+CROSS APPLY (
+	SELECT *
+	FROM OPENJSON(Item.CustomFields)
+	WITH (
+		CountryOfManufacture nvarchar(50)	'$.CountryOfManufacture',
+		FirstTag nvarchar(200)				'$.Tags[0]'
+	)
+) AS J;
 
 /*
 4. Найти в StockItems строки, где есть тэг "Vintage".
@@ -81,4 +104,9 @@ USE WideWorldImporters
 */
 
 
-напишите здесь свое решение
+SELECT
+	StockItemID,
+    StockItemName   
+FROM Warehouse.StockItems
+CROSS APPLY OPENJSON(CustomFields, '$.Tags') AS  tags
+WHERE  tags.value = 'Vintage'
