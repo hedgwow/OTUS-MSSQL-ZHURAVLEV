@@ -40,8 +40,160 @@ USE WideWorldImporters
 
 Сделать два варианта: с помощью OPENXML и через XQuery.
 */
+DECLARE @OpenXMLDoc XML
 
-напишите здесь свое решение
+SELECT @OpenXMLDoc = BulkColumn
+FROM OPENROWSET
+(BULK 'E:\OTUS\OTUS-MSSQL-ZHURAVLEV\HW007\StockItems-188-1fb5df.xml', 
+ SINGLE_CLOB)
+as data 
+
+DECLARE @OpenXMLDocHandle int
+EXEC sp_xml_preparedocument @OpenXMLDocHandle OUTPUT, @OpenXMLDoc
+
+MERGE [Warehouse].[StockItems]
+USING (
+	SELECT *
+	FROM OPENXML(@OpenXMLDocHandle, N'/StockItems/Item')
+	WITH ( 
+		[StockItemName] NVARCHAR(100) '@Name',
+		[SupplierID] int 'SupplierID', 
+		[UnitPackageID] int 'Package/UnitPackageID',
+		[OuterPackageID] int 'Package/OuterPackageID', 
+		[QuantityPerOuter] int 'Package/QuantityPerOuter',
+		[TypicalWeightPerUnit] DECIMAL(18, 2) 'Package/TypicalWeightPerUnit',
+		[LeadTimeDays] int 'LeadTimeDays',
+		[IsChillerStock] bit 'IsChillerStock',
+		[TaxRate] DECIMAL(18, 3) 'TaxRate',
+		[UnitPrice] DECIMAL(18, 2) 'UnitPrice')
+) AS StockItemsXML (
+		[StockItemName],
+		[SupplierID],
+		[UnitPackageID],
+		[OuterPackageID],
+		[QuantityPerOuter],
+		[TypicalWeightPerUnit],
+		[LeadTimeDays],
+		[IsChillerStock],
+		[TaxRate],
+		[UnitPrice]) ON StockItems.StockItemName = StockItemsXML.StockItemName	
+WHEN MATCHED THEN
+	UPDATE SET 		
+		[StockItemName] = [StockItemsXML].[StockItemName],
+		[SupplierID] = [StockItemsXML].[SupplierID],
+		[UnitPackageID] = [StockItemsXML].[UnitPackageID],
+		[OuterPackageID] = [StockItemsXML].[OuterPackageID],
+		[QuantityPerOuter] = [StockItemsXML].[QuantityPerOuter],
+		[TypicalWeightPerUnit] = [StockItemsXML].[TypicalWeightPerUnit],
+		[LeadTimeDays] = [StockItemsXML].[LeadTimeDays],
+		[IsChillerStock] = [StockItemsXML].[IsChillerStock],
+		[TaxRate] = [StockItemsXML].[TaxRate],
+		[UnitPrice] = [StockItemsXML].[UnitPrice],
+		[LastEditedBy] = 9
+WHEN NOT MATCHED THEN
+	INSERT (
+		[StockItemName],
+		[SupplierID],
+		[UnitPackageID],
+		[OuterPackageID],
+		[QuantityPerOuter],
+		[TypicalWeightPerUnit],
+		[LeadTimeDays],
+		[IsChillerStock],
+		[TaxRate],
+		[UnitPrice],
+		[LastEditedBy]
+	)
+	VALUES (
+		[StockItemsXML].[StockItemName],
+		[StockItemsXML].[SupplierID],
+		[StockItemsXML].[UnitPackageID],
+		[StockItemsXML].[OuterPackageID],
+		[StockItemsXML].[QuantityPerOuter],
+		[StockItemsXML].[TypicalWeightPerUnit],
+		[StockItemsXML].[LeadTimeDays],
+		[StockItemsXML].[IsChillerStock],
+		[StockItemsXML].[TaxRate],
+		[StockItemsXML].[UnitPrice],
+		9
+	);
+
+
+	-------------
+
+DECLARE @XQueryXMLDoc XML
+
+SELECT @XQueryXMLDoc = BulkColumn
+FROM OPENROWSET
+(BULK 'E:\OTUS\OTUS-MSSQL-ZHURAVLEV\HW007\StockItems-188-1fb5df.xml', 
+ SINGLE_CLOB)
+as data 
+
+MERGE [Warehouse].[StockItems]
+USING (
+	SELECT 
+		D.Item.value('@Name[1]','NVARCHAR(100)') [StockItemName],
+		D.Item.value('SupplierID[1]', 'int') [SupplierID], 
+		D.Item.value('Package[1]/UnitPackageID[1]','int') [UnitPackageID],
+		D.Item.value('Package[1]/OuterPackageID[1]','int') [OuterPackageID], 
+		D.Item.value('Package[1]/QuantityPerOuter[1]','int') [QuantityPerOuter],
+		D.Item.value('Package[1]/TypicalWeightPerUnit[1]','DECIMAL(18, 2)') [TypicalWeightPerUnit],
+		D.Item.value('LeadTimeDays[1]','int') [LeadTimeDays],
+		D.Item.value('IsChillerStock[1]','bit') [IsChillerStock],
+		D.Item.value('TaxRate[1]','DECIMAL(18, 3)') [TaxRate],
+		D.Item.value('UnitPrice[1]','DECIMAL(18, 2)') [UnitPrice]
+	FROM @XQueryXMLDoc.nodes('/StockItems/Item') AS D(Item)		
+) AS StockItemsXML (
+		[StockItemName],
+		[SupplierID],
+		[UnitPackageID],
+		[OuterPackageID],
+		[QuantityPerOuter],
+		[TypicalWeightPerUnit],
+		[LeadTimeDays],
+		[IsChillerStock],
+		[TaxRate],
+		[UnitPrice]) ON StockItems.StockItemName = StockItemsXML.StockItemName	
+WHEN MATCHED THEN
+	UPDATE SET 		
+		[StockItemName] = [StockItemsXML].[StockItemName],
+		[SupplierID] = [StockItemsXML].[SupplierID],
+		[UnitPackageID] = [StockItemsXML].[UnitPackageID],
+		[OuterPackageID] = [StockItemsXML].[OuterPackageID],
+		[QuantityPerOuter] = [StockItemsXML].[QuantityPerOuter],
+		[TypicalWeightPerUnit] = [StockItemsXML].[TypicalWeightPerUnit],
+		[LeadTimeDays] = [StockItemsXML].[LeadTimeDays],
+		[IsChillerStock] = [StockItemsXML].[IsChillerStock],
+		[TaxRate] = [StockItemsXML].[TaxRate],
+		[UnitPrice] = [StockItemsXML].[UnitPrice],
+		[LastEditedBy] = 9
+WHEN NOT MATCHED THEN
+	INSERT (
+		[StockItemName],
+		[SupplierID],
+		[UnitPackageID],
+		[OuterPackageID],
+		[QuantityPerOuter],
+		[TypicalWeightPerUnit],
+		[LeadTimeDays],
+		[IsChillerStock],
+		[TaxRate],
+		[UnitPrice],
+		[LastEditedBy]
+	)
+	VALUES (
+		[StockItemsXML].[StockItemName],
+		[StockItemsXML].[SupplierID],
+		[StockItemsXML].[UnitPackageID],
+		[StockItemsXML].[OuterPackageID],
+		[StockItemsXML].[QuantityPerOuter],
+		[StockItemsXML].[TypicalWeightPerUnit],
+		[StockItemsXML].[LeadTimeDays],
+		[StockItemsXML].[IsChillerStock],
+		[StockItemsXML].[TaxRate],
+		[StockItemsXML].[UnitPrice],
+		9
+	);	
 
 /*
 2. Выгрузить данные из таблицы StockItems в такой же xml-файл, как StockItems.xml
